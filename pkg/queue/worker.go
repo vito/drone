@@ -177,6 +177,7 @@ func (w *worker) runBuild(task *BuildTask, buf io.Writer) (bool, error) {
 		PR:     task.Commit.PullRequest,
 		Dir:    filepath.Join("/var/cache/drone/src", task.Repo.Slug),
 		Depth:  git.GitDepth(task.Script.Git),
+		Privileged: task.Repo.Privileged,
 	}
 
 	return w.runner.Run(

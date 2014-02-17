@@ -308,8 +308,9 @@ func (b *Builder) run() error {
 		AttachStdout: true,
 		AttachStderr: true,
 	}
+
 	host := docker.HostConfig{
-		Privileged: false,
+		Privileged: b.Repo.Privileged && len(b.Repo.PR) == 0,
 	}
 
 	// debugging

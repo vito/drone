@@ -40,6 +40,9 @@ type Repo struct {
 
 	// (optional) The depth of the `git clone` command.
 	Depth int
+
+	// (optional) Whether to run the containers privileged.
+	Privileged bool
 }
 
 // IsRemote returns true if the Repository is located
