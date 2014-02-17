@@ -13,6 +13,19 @@ import (
 	"github.com/dotcloud/docker/utils"
 )
 
+type ImageService interface {
+	List() ([]*Images, error)
+
+	Create(image string) error
+	Pull(image string) error
+	PullTag(name, tag string) error
+
+	Remove(image string) ([]*Delete, error)
+	Inspect(image string) (*Image, error)
+
+	Build(tag, dir string) error
+}
+
 type Images struct {
 	ID          string   `json:"Id"`
 	RepoTags    []string `json:",omitempty"`
@@ -46,23 +59,23 @@ type Delete struct {
 	Untagged string `json:",omitempty"`
 }
 
-type ImageService struct {
+type DockerImageService struct {
 	*Client
 }
 
 // List Images
-func (c *ImageService) List() ([]*Images, error) {
+func (c *DockerImageService) List() ([]*Images, error) {
 	images := []*Images{}
 	err := c.do("GET", "/images/json?all=0", nil, &images)
 	return images, err
 }
 
 // Create an image, either by pull it from the registry or by importing it.
-func (c *ImageService) Create(image string) error {
+func (c *DockerImageService) Create(image string) error {
 	return c.do("POST", fmt.Sprintf("/images/create?fromImage=%s", image), nil, nil)
 }
 
-func (c *ImageService) Pull(image string) error {
+func (c *DockerImageService) Pull(image string) error {
 	name, tag := utils.ParseRepositoryTag(image)
 	if len(tag) == 0 {
 		tag = DEFAULTTAG
@@ -70,7 +83,7 @@ func (c *ImageService) Pull(image string) error {
 	return c.PullTag(name, tag)
 }
 
-func (c *ImageService) PullTag(name, tag string) error {
+func (c *DockerImageService) PullTag(name, tag string) error {
 	var out io.Writer
 	if Logging {
 		out = os.Stdout
@@ -81,21 +94,21 @@ func (c *ImageService) PullTag(name, tag string) error {
 }
 
 // Remove the image name from the filesystem
-func (c *ImageService) Remove(image string) ([]*Delete, error) {
+func (c *DockerImageService) Remove(image string) ([]*Delete, error) {
 	resp := []*Delete{}
 	err := c.do("DELETE", fmt.Sprintf("/images/%s", image), nil, &resp)
 	return resp, err
 }
 
 // Inspect the image
-func (c *ImageService) Inspect(name string) (*Image, error) {
+func (c *DockerImageService) Inspect(name string) (*Image, error) {
 	image := Image{}
 	err := c.do("GET", fmt.Sprintf("/images/%s/json", name), nil, &image)
 	return &image, err
 }
 
 // Build the Image
-func (c *ImageService) Build(tag, dir string) error {
+func (c *DockerImageService) Build(tag, dir string) error {
 
 	// tar the file
 	context, err := archive.Tar(dir, archive.Uncompressed)

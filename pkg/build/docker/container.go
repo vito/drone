@@ -5,26 +5,44 @@ import (
 	"io"
 )
 
-type ContainerService struct {
+type ContainerService interface {
+	List() ([]*Containers, error)
+	ListAll() ([]*Containers, error)
+
+	Create(*Config) (*Run, error)
+
+	Start(id string, conf *HostConfig) error
+	Stop(id string, timeoutInSeconds int) error
+	Remove(id string) error
+	Wait(id string) (*Wait, error)
+	Attach(id string, out io.Writer) error
+	Inspect(id string) (*Container, error)
+
+	Run(conf *Config, host *HostConfig, out io.Writer) (*Wait, error)
+	RunDaemon(conf *Config, host *HostConfig) (*Run, error)
+	RunDaemonPorts(image string, ports ...string) (*Run, error)
+}
+
+type DockerContainerService struct {
 	*Client
 }
 
 // List only running containers.
-func (c *ContainerService) List() ([]*Containers, error) {
+func (c *DockerContainerService) List() ([]*Containers, error) {
 	containers := []*Containers{}
 	err := c.do("GET", "/containers/json?all=0", nil, &containers)
 	return containers, err
 }
 
 // List all containers
-func (c *ContainerService) ListAll() ([]*Containers, error) {
+func (c *DockerContainerService) ListAll() ([]*Containers, error) {
 	containers := []*Containers{}
 	err := c.do("GET", "/containers/json?all=1", nil, &containers)
 	return containers, err
 }
 
 // Create a Container
-func (c *ContainerService) Create(conf *Config) (*Run, error) {
+func (c *DockerContainerService) Create(conf *Config) (*Run, error) {
 	run, err := c.create(conf)
 	switch {
 	// if no error, exit immediately
@@ -47,49 +65,49 @@ func (c *ContainerService) Create(conf *Config) (*Run, error) {
 	return c.create(conf)
 }
 
-func (c *ContainerService) create(conf *Config) (*Run, error) {
+func (c *DockerContainerService) create(conf *Config) (*Run, error) {
 	run := Run{}
 	err := c.do("POST", "/containers/create", conf, &run)
 	return &run, err
 }
 
 // Start the container id
-func (c *ContainerService) Start(id string, conf *HostConfig) error {
+func (c *DockerContainerService) Start(id string, conf *HostConfig) error {
 	return c.do("POST", fmt.Sprintf("/containers/%s/start", id), &conf, nil)
 }
 
 // Stop the container id
-func (c *ContainerService) Stop(id string, timeout int) error {
+func (c *DockerContainerService) Stop(id string, timeout int) error {
 	return c.do("POST", fmt.Sprintf("/containers/%s/stop?t=%v", id, timeout), nil, nil)
 }
 
 // Remove the container id from the filesystem.
-func (c *ContainerService) Remove(id string) error {
+func (c *DockerContainerService) Remove(id string) error {
 	return c.do("DELETE", fmt.Sprintf("/containers/%s", id), nil, nil)
 }
 
 // Block until container id stops, then returns the exit code
-func (c *ContainerService) Wait(id string) (*Wait, error) {
+func (c *DockerContainerService) Wait(id string) (*Wait, error) {
 	wait := Wait{}
 	err := c.do("POST", fmt.Sprintf("/containers/%s/wait", id), nil, &wait)
 	return &wait, err
 }
 
 // Attach to the container to stream the stdout and stderr
-func (c *ContainerService) Attach(id string, out io.Writer) error {
+func (c *DockerContainerService) Attach(id string, out io.Writer) error {
 	path := fmt.Sprintf("/containers/%s/attach?&stream=1&stdout=1&stderr=1", id)
 	return c.hijack("POST", path, false, out)
 }
 
 // Stop the container id
-func (c *ContainerService) Inspect(id string) (*Container, error) {
+func (c *DockerContainerService) Inspect(id string) (*Container, error) {
 	container := Container{}
 	err := c.do("GET", fmt.Sprintf("/containers/%s/json", id), nil, &container)
 	return &container, err
 }
 
 // Run the container
-func (c *ContainerService) Run(conf *Config, host *HostConfig, out io.Writer) (*Wait, error) {
+func (c *DockerContainerService) Run(conf *Config, host *HostConfig, out io.Writer) (*Wait, error) {
 	// create the container from the image
 	run, err := c.Create(conf)
 	if err != nil {
@@ -116,7 +134,7 @@ func (c *ContainerService) Run(conf *Config, host *HostConfig, out io.Writer) (*
 }
 
 // Run the container as a Daemon
-func (c *ContainerService) RunDaemon(conf *Config, host *HostConfig) (*Run, error) {
+func (c *DockerContainerService) RunDaemon(conf *Config, host *HostConfig) (*Run, error) {
 	run, err := c.Create(conf)
 	if err != nil {
 		return nil, err
@@ -127,7 +145,7 @@ func (c *ContainerService) RunDaemon(conf *Config, host *HostConfig) (*Run, erro
 	return run, err
 }
 
-func (c *ContainerService) RunDaemonPorts(image string, ports ...string) (*Run, error) {
+func (c *DockerContainerService) RunDaemonPorts(image string, ports ...string) (*Run, error) {
 	// setup configuration
 	config := Config{Image: image}
 	config.ExposedPorts = make(map[Port]struct{})

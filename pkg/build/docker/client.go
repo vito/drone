@@ -35,8 +35,8 @@ func New() *Client {
 
 	c.setHost(DEFAULTUNIXSOCKET)
 
-	c.Images = &ImageService{c}
-	c.Containers = &ContainerService{c}
+	c.Images = &DockerImageService{c}
+	c.Containers = &DockerContainerService{c}
 	return c
 }
 
@@ -44,8 +44,8 @@ type Client struct {
 	proto string
 	addr  string
 
-	Images     *ImageService
-	Containers *ContainerService
+	Images     ImageService
+	Containers ContainerService
 }
 
 var (
