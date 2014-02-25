@@ -4,6 +4,7 @@ import (
 	"github.com/drone/drone/pkg/build/script"
 	"testing"
 
+	"github.com/drone/drone/pkg/build/docker"
 	"github.com/drone/drone/pkg/build/docker/fakedocker"
 	"github.com/drone/drone/pkg/build/repo"
 )
@@ -12,18 +13,20 @@ func TestPrivilegedBuilds(t *testing.T) {
 	fakeContainers := fakedocker.NewFakeContainerService()
 	fakeImages := fakedocker.NewFakeImageService()
 
-	client.Containers = fakeContainers
-	client.Images = fakeImages
+	dockerClient := docker.New()
+	dockerClient.Containers = fakeContainers
+	dockerClient.Images = fakeImages
 
-	builder := &Builder{
-		Build: &script.Build{
-			Image: "some-image",
-		},
-		Repo: &repo.Repo{
-			Path:       "https://github.com/drone/drone",
-			Dir:        "/var/cache/drone/src",
-			Privileged: true,
-		},
+	builder := New(dockerClient)
+
+	builder.Build = &script.Build{
+		Image: "some-image",
+	}
+
+	builder.Repo = &repo.Repo{
+		Path:       "https://github.com/drone/drone",
+		Dir:        "/var/cache/drone/src",
+		Privileged: true,
 	}
 
 	// just have to return something so it's found
@@ -58,19 +61,21 @@ func TestPrivilegedBuildsWithPullRequests(t *testing.T) {
 	fakeContainers := fakedocker.NewFakeContainerService()
 	fakeImages := fakedocker.NewFakeImageService()
 
-	client.Containers = fakeContainers
-	client.Images = fakeImages
+	dockerClient := docker.New()
+	dockerClient.Containers = fakeContainers
+	dockerClient.Images = fakeImages
 
-	builder := &Builder{
-		Build: &script.Build{
-			Image: "some-image",
-		},
-		Repo: &repo.Repo{
-			Path:       "https://github.com/drone/drone",
-			Dir:        "/var/cache/drone/src",
-			PR:         "some-dangerous-pr",
-			Privileged: true,
-		},
+	builder := New(dockerClient)
+
+	builder.Build = &script.Build{
+		Image: "some-image",
+	}
+
+	builder.Repo = &repo.Repo{
+		Path:       "https://github.com/drone/drone",
+		Dir:        "/var/cache/drone/src",
+		PR:         "some-dangerous-pr",
+		Privileged: true,
 	}
 
 	// just have to return something so it's found
