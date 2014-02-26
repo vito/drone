@@ -5,14 +5,24 @@ import (
 	"fmt"
 )
 
+type DockerfileWriter interface {
+	WriteAdd(from, to string)
+	WriteFrom(from string)
+	WriteRun(cmd string)
+	WriteUser(user string)
+	WriteEnv(key, val string)
+	WriteWorkdir(workdir string)
+	WriteEntrypoint(entrypoint string)
+
+	Bytes() []byte
+}
+
 type Dockerfile struct {
 	bytes.Buffer
 }
 
-func New(from string) *Dockerfile {
-	d := Dockerfile{}
-	d.WriteFrom(from)
-	return &d
+func New() *Dockerfile {
+	return &Dockerfile{}
 }
 
 func (d *Dockerfile) WriteAdd(from, to string) {

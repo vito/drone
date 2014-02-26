@@ -6,6 +6,7 @@ import (
 
 	"github.com/drone/drone/pkg/build"
 	"github.com/drone/drone/pkg/build/docker"
+	"github.com/drone/drone/pkg/build/dockerfile"
 	"github.com/drone/drone/pkg/build/repo"
 	"github.com/drone/drone/pkg/build/script"
 )
@@ -34,7 +35,7 @@ func (runner *buildRunner) Run(buildScript *script.Build, repo *repo.Repo, key [
 	builder.Stdout = buildOutput
 	builder.Timeout = runner.timeout
 
-	err := builder.Run()
+	err := builder.Run(dockerfile.New())
 
 	return builder.BuildState == nil || builder.BuildState.ExitCode != 0, err
 }

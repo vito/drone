@@ -6,6 +6,7 @@ import (
 	"github.com/drone/drone/pkg/build"
 	"github.com/drone/drone/pkg/build/docker"
 	"github.com/drone/drone/pkg/build/docker/fakedocker"
+	"github.com/drone/drone/pkg/build/dockerfile/fakedockerfile"
 	"github.com/drone/drone/pkg/build/repo"
 	"github.com/drone/drone/pkg/build/script"
 )
@@ -13,6 +14,7 @@ import (
 func TestPrivilegedBuilds(t *testing.T) {
 	fakeContainers := fakedocker.NewFakeContainerService()
 	fakeImages := fakedocker.NewFakeImageService()
+	fakeDockerfile := fakedockerfile.New()
 
 	dockerClient := docker.New()
 	dockerClient.Containers = fakeContainers
@@ -33,7 +35,7 @@ func TestPrivilegedBuilds(t *testing.T) {
 	// just have to return something so it's found
 	fakeImages.InspectResult["some-image"] = nil
 
-	err := builder.Run()
+	err := builder.Run(fakeDockerfile)
 	if err != nil {
 		t.Error(err)
 	}
@@ -56,11 +58,16 @@ func TestPrivilegedBuilds(t *testing.T) {
 			t.Error("container should have been privileged")
 		}
 	}
+
+	if !fakeDockerfile.IsWritten("ENV", "DRONE_PRIVILEGED", "true") {
+		t.Error("Dockerfile should have $DRONE_PRIVILEGED set to true")
+	}
 }
 
 func TestPrivilegedBuildsWithPullRequests(t *testing.T) {
 	fakeContainers := fakedocker.NewFakeContainerService()
 	fakeImages := fakedocker.NewFakeImageService()
+	fakeDockerfile := fakedockerfile.New()
 
 	dockerClient := docker.New()
 	dockerClient.Containers = fakeContainers
@@ -82,7 +89,7 @@ func TestPrivilegedBuildsWithPullRequests(t *testing.T) {
 	// just have to return something so it's found
 	fakeImages.InspectResult["some-image"] = nil
 
-	err := builder.Run()
+	err := builder.Run(fakeDockerfile)
 	if err != nil {
 		t.Error(err)
 	}
@@ -104,5 +111,9 @@ func TestPrivilegedBuildsWithPullRequests(t *testing.T) {
 		if started.Privileged {
 			t.Error("container should NOT have been privileged")
 		}
+	}
+
+	if !fakeDockerfile.IsWritten("ENV", "DRONE_PRIVILEGED", "false") {
+		t.Error("Dockerfile should have $DRONE_PRIVILEGED set to false")
 	}
 }

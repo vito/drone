@@ -89,7 +89,7 @@ type Builder struct {
 	dockerClient *docker.Client
 }
 
-func (b *Builder) Run() error {
+func (b *Builder) Run(dockerfile dockerfile.DockerfileWriter) error {
 	// teardown will remove the Image and stop and
 	// remove the service containers after the
 	// build is done running.
@@ -97,7 +97,7 @@ func (b *Builder) Run() error {
 
 	// setup will create the Image and supporting
 	// service containers.
-	if err := b.setup(); err != nil {
+	if err := b.setup(dockerfile); err != nil {
 		return err
 	}
 
@@ -125,7 +125,7 @@ func (b *Builder) Run() error {
 	return nil
 }
 
-func (b *Builder) setup() error {
+func (b *Builder) setup(dockerfile dockerfile.DockerfileWriter) error {
 
 	// temp directory to store all files required
 	// to generate the Docker image.
@@ -216,7 +216,7 @@ func (b *Builder) setup() error {
 		return err
 	}
 
-	if err := b.writeDockerfile(dir); err != nil {
+	if err := b.writeDockerfile(dir, dockerfile); err != nil {
 		return err
 	}
 
@@ -399,8 +399,8 @@ func (b *Builder) run() error {
 // writeDockerfile is a helper function that generates a
 // Dockerfile and writes to the builds temporary directory
 // so that it can be used to create the Image.
-func (b *Builder) writeDockerfile(dir string) error {
-	var dockerfile = dockerfile.New(b.Build.Image)
+func (b *Builder) writeDockerfile(dir string, dockerfile dockerfile.DockerfileWriter) error {
+	dockerfile.WriteFrom(b.Build.Image)
 	dockerfile.WriteWorkdir(b.Repo.Dir)
 	dockerfile.WriteAdd("drone", "/usr/local/bin/")
 
@@ -443,6 +443,10 @@ func (b *Builder) writeDockerfile(dir string) error {
 		dockerfile.WriteRun("chmod 600 /root/.ssh/id_rsa")
 		dockerfile.WriteRun("echo 'StrictHostKeyChecking no' > /root/.ssh/config")
 	}
+
+	// indicate to a build whether it's running privileged or not,
+	// so it can run in a "degraded" mode for PRs (i.e. unit tests only)
+	dockerfile.WriteEnv("DRONE_PRIVILEGED", fmt.Sprintf("%v", b.Repo.ShouldRunPrivileged()))
 
 	dockerfile.WriteAdd("proxy.sh", "/etc/drone.d/")
 	dockerfile.WriteEntrypoint("/bin/bash -e /usr/local/bin/drone")

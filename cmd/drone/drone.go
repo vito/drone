@@ -12,6 +12,7 @@ import (
 
 	"github.com/drone/drone/pkg/build"
 	"github.com/drone/drone/pkg/build/docker"
+	"github.com/drone/drone/pkg/build/dockerfile"
 	"github.com/drone/drone/pkg/build/log"
 	"github.com/drone/drone/pkg/build/repo"
 	"github.com/drone/drone/pkg/build/script"
@@ -248,7 +249,7 @@ func run(path string) {
 func runSequential(builders []*build.Builder) {
 	// loop through and execute each build
 	for _, builder := range builders {
-		if err := builder.Run(); err != nil {
+		if err := builder.Run(dockerfile.New()); err != nil {
 			log.Errf("Error executing build: %s", err.Error())
 			os.Exit(1)
 		}
@@ -264,7 +265,7 @@ func runParallel(builders []*build.Builder) {
 		// Launch a goroutine to run the build
 		go func(builder *build.Builder) {
 			defer wg.Done()
-			builder.Run()
+			builder.Run(dockerfile.New())
 		}(builder)
 		time.Sleep(500 * time.Millisecond) // get weird iptables failures unless we sleep.
 	}
