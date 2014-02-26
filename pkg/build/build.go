@@ -310,7 +310,7 @@ func (b *Builder) run() error {
 	}
 
 	host := docker.HostConfig{
-		Privileged: b.Repo.Privileged && len(b.Repo.PR) == 0,
+		Privileged: b.Repo.ShouldRunPrivileged(),
 	}
 
 	// debugging

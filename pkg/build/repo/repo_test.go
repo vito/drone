@@ -52,3 +52,21 @@ func TestIsGit(t *testing.T) {
 		}
 	}
 }
+
+func TestShouldRunPrivileged(t *testing.T) {
+	if !(Repo{Privileged: true, PR: ""}.ShouldRunPrivileged()) {
+		t.Errorf("ShouldRunPrivileged should be true for repos with no pull requests")
+	}
+
+	if (Repo{Privileged: true, PR: "foo"}.ShouldRunPrivileged()) {
+		t.Errorf("ShouldRunPrivileged should be false for repos with a pull request")
+	}
+
+	if (Repo{Privileged: false, PR: ""}.ShouldRunPrivileged()) {
+		t.Errorf("ShouldRunPrivileged should be false for repos with it disabled")
+	}
+
+	if (Repo{Privileged: false, PR: "foo"}.ShouldRunPrivileged()) {
+		t.Errorf("ShouldRunPrivileged should be false for repos with it disabled")
+	}
+}

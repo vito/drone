@@ -93,6 +93,10 @@ func (r *Repo) IsGit() bool {
 	return false
 }
 
+func (r Repo) ShouldRunPrivileged() bool {
+	return r.Privileged && len(r.PR) == 0
+}
+
 // returns commands that can be used in a Dockerfile
 // to clone the repository.
 //
