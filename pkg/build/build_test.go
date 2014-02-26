@@ -1,12 +1,13 @@
-package build
+package build_test
 
 import (
-	"github.com/drone/drone/pkg/build/script"
 	"testing"
 
+	"github.com/drone/drone/pkg/build"
 	"github.com/drone/drone/pkg/build/docker"
 	"github.com/drone/drone/pkg/build/docker/fakedocker"
 	"github.com/drone/drone/pkg/build/repo"
+	"github.com/drone/drone/pkg/build/script"
 )
 
 func TestPrivilegedBuilds(t *testing.T) {
@@ -17,7 +18,7 @@ func TestPrivilegedBuilds(t *testing.T) {
 	dockerClient.Containers = fakeContainers
 	dockerClient.Images = fakeImages
 
-	builder := New(dockerClient)
+	builder := build.New(dockerClient)
 
 	builder.Build = &script.Build{
 		Image: "some-image",
@@ -65,7 +66,7 @@ func TestPrivilegedBuildsWithPullRequests(t *testing.T) {
 	dockerClient.Containers = fakeContainers
 	dockerClient.Images = fakeImages
 
-	builder := New(dockerClient)
+	builder := build.New(dockerClient)
 
 	builder.Build = &script.Build{
 		Image: "some-image",
