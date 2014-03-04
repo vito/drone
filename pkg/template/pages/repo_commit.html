@@ -43,6 +43,15 @@
 				<dt>Message</dt>
 				<dd>{{ .Commit.Message }}</dd>
 			</div>
+
+			<div class="actions">
+				{{ if not .Build.IsRunning }}
+					<form action="/{{.Repo.Slug}}/commit/{{.Commit.Hash}}/rebuild"
+								method="POST">
+						<input class="btn btn-default" type="submit" value="Rebuild"/>
+					</form>
+				{{end}}
+			</div>
 		</div>
 		<pre id="stdout"></pre>
 		<span id="follow">Follow</span>
